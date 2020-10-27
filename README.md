@@ -41,3 +41,7 @@ re-archiving a second batch and hoping we didn't create new problems).
 they live, [NCA](https://github.com/uoregon-libraries/newspaper-curation-app)
 has a useful tool to help.  Clone NCA, run `make`, and then use
 `bin/find-issues`.
+
+Note also that the code is definitely over-architected.  It's basically a
+heavily-modified copy of another tool which already had a job / worker approach
+that seemed potentially useful for retries and failure reporting.
