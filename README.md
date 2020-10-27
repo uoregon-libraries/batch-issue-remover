@@ -5,12 +5,15 @@ Removes incorrect or damaged issues in chronam / ONI batches:
     make
     ./remove-issues /path/to/batch_xxx_yyyyyyy_ver01/ \
       /path/to/batch_xxx_yyyyyyy_ver02 \
-      sn12345678/2020-01-01 sn12345678/2020-02-01 sn12345678/2020-03-01
+      sn12345678/2020-01-01_01 sn12345678/2020020101 sn12345678/2020030101
 
-This would remove the January 1st, February 1st, and March 1st issues of the
-title identified with LCCN "sn12345678".  The changes are written to the
-destination directory rather than run in-place so that the original batch may
-be preserved if necessary.
+This would remove the first editions of the January 1st, February 1st, and
+March 1st issues of the title identified with LCCN "sn12345678".  The changes
+are written to the destination directory rather than run in-place so that the
+original batch may be preserved if necessary.
+
+The issue keys are stripped of dashes and underscores to allow for more
+readable input.
 
 The source directory should either be the pristine dark archive, or a copy
 thereof (though the TIFF files won't matter, as they aren't copied to the
