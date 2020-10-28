@@ -88,7 +88,12 @@ func main() {
 		log.Fatalf("Unable to read batch XML file %q: %s", batchPath, err)
 	}
 
-	// Crawl all files and determine the action necessary
+	// Crawl all files and determine the action necessary.  NOTE: this may not be
+	// the ideal number of workers.  On an SSD, it seems to work much faster than
+	// lower numbers.  One of the following must be true, but I dunno which:
+	// - Go's IO is really bad when not parallelized
+	// - My code is doing more CPU-intense logic than it seems like it should
+	// - SSD write queuing is just super amazing
 	var queue = NewWorkQueue(fixContext, 2*runtime.NumCPU())
 	var walker = NewWalker(fixContext, queue)
 	err = walker.Walk()
