@@ -1,14 +1,11 @@
 package main
 
 import (
-	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 )
 
 func usageError(msg string, args ...interface{}) {
@@ -83,11 +80,16 @@ func main() {
 	// Read the batch XML to get a list of issue directories to skip
 	var batchPath = filepath.Join(fixContext.SourceDir, "data", "batch.xml")
 	var newBatchPath = filepath.Join(fixContext.DestDir, "data", "batch.xml")
-	var err error
-	fixContext.SkipDirs, err = fixBatchXML(batchPath, newBatchPath, fixContext.IssueKeys)
+
+	log.Printf("INFO: Reading source batch XML %q", batchPath)
+	var batch, err = ParseBatch(batchPath, fixContext.IssueKeys)
 	if err != nil {
-		log.Fatalf("Unable to read batch XML file %q: %s", batchPath, err)
+		log.Fatalf("ERROR: Unable to process batch XML file %q: %s", batchPath, err)
 	}
+
+	log.Printf("INFO: Writing new batch XML to %q", newBatchPath)
+	err = batch.WriteBatchXML(newBatchPath)
+	fixContext.SkipDirs = batch.SkipDirs
 
 	// Crawl all files and determine the action necessary.  NOTE: this may not be
 	// the ideal number of workers.  On an SSD, it seems to work much faster than
@@ -104,76 +106,4 @@ func main() {
 
 	// Wait for the queue to complete all actions/jobs
 	queue.Wait()
-}
-
-type batchXML struct {
-	Issues []*issueXML `xml:"issue"`
-}
-type issueXML struct {
-	LCCN      string `xml:"lccn,attr"`
-	IssueDate string `xml:"issueDate,attr"`
-	Edition   string `xml:"editionOrder,attr"`
-	Path      string `xml:",innerxml"`
-}
-
-// fixBatchXML is a bad function - it really does two things: rewrites the
-// batch XML in the new batch and gathers the list of directories to skip for
-// the workers.  It's easier this way, but definitely not clean.
-func fixBatchXML(batchPath, newBatchPath string, keysToDelete []string) ([]string, error) {
-	var batchInfo, err = parseBatchXML(batchPath)
-	if err != nil {
-		return nil, err
-	}
-
-	var dirsToSkip []string
-	dirsToSkip, err = getSkipDirs(batchInfo, keysToDelete)
-	if err != nil {
-		return nil, err
-	}
-
-	return dirsToSkip, err
-}
-
-func getSkipDirs(batchInfo *batchXML, keysToDelete []string) ([]string, error) {
-	var keyToDir = make(map[string]string)
-	for _, issue := range batchInfo.Issues {
-		var key = keyfix(issue.LCCN + "/" + issue.IssueDate + issue.Edition)
-		var dir, _ = filepath.Split(issue.Path)
-		keyToDir[key] = dir
-	}
-	log.Printf("INFO: batch.xml contains %d issues", len(keyToDir))
-
-	var dirs []string
-	for _, key := range keysToDelete {
-		key = keyfix(key)
-		var dir = keyToDir[key]
-		if dir == "" {
-			return nil, fmt.Errorf("key %q was not found in the batch.xml file", key)
-		}
-		log.Printf("INFO: Mapping input key %q to directory %q", key, dir)
-		dirs = append(dirs, dir)
-	}
-
-	return dirs, nil
-}
-
-func parseBatchXML(pth string) (*batchXML, error) {
-	var data, err = ioutil.ReadFile(pth)
-	if err != nil {
-		return nil, err
-	}
-	var batchInfo = new(batchXML)
-	err = xml.Unmarshal(data, batchInfo)
-	if err != nil {
-		log.Fatalf("Unable to parse batch XML file %q: %s", pth, err)
-		return nil, err
-	}
-
-	return batchInfo, nil
-}
-
-func keyfix(key string) string {
-	key = strings.Replace(key, "-", "", -1)
-	key = strings.Replace(key, "_", "", -1)
-	return key
 }

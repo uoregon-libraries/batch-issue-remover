@@ -75,6 +75,11 @@ func (q *WorkQueue) Add(sourcePath, destDir, baseName string) {
 		}
 	}
 
+	if baseName == "batch.xml" {
+		log.Printf("INFO: skipping file %q: batch.XML", sourcePath)
+		return
+	}
+
 	// Create the destination directory if it doesn't exist
 	var err = os.MkdirAll(destDir, 0755)
 	if err != nil {
