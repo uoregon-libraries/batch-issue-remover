@@ -93,8 +93,7 @@ func main() {
 	var walker = NewWalker(fixContext, queue)
 	err = walker.Walk()
 	if err != nil {
-		fmt.Printf("Error trying to copy/fix the batch: %s\n", err)
-		os.Exit(1)
+		log.Fatalf("Error trying to copy/fix the batch: %s\n", err)
 	}
 
 	// Wait for the queue to complete all actions/jobs
