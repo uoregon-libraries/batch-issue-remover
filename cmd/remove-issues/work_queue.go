@@ -88,7 +88,7 @@ func (q *WorkQueue) Add(sourcePath, destDir, baseName string) {
 
 	switch ext {
 	case "xml":
-		if baseName[len(baseName)-5:] == "_1.xml" {
+		if baseName[len(baseName)-6:] == "_1.xml" {
 			log.Printf("INFO: skipping file %q: validated XML", sourcePath)
 			job.Type = FileSkip
 		} else {
