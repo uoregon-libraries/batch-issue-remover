@@ -82,8 +82,9 @@ func main() {
 
 	// Read the batch XML to get a list of issue directories to skip
 	var batchPath = filepath.Join(fixContext.SourceDir, "data", "batch.xml")
+	var newBatchPath = filepath.Join(fixContext.DestDir, "data", "batch.xml")
 	var err error
-	fixContext.SkipDirs, err = readBatchXML(batchPath, fixContext.IssueKeys)
+	fixContext.SkipDirs, err = fixBatchXML(batchPath, newBatchPath, fixContext.IssueKeys)
 	if err != nil {
 		log.Fatalf("Unable to read batch XML file %q: %s", batchPath, err)
 	}
@@ -115,18 +116,25 @@ type issueXML struct {
 	Path      string `xml:",innerxml"`
 }
 
-func readBatchXML(batchPath string, keysToDelete []string) ([]string, error) {
-	var data, err = ioutil.ReadFile(batchPath)
+// fixBatchXML is a bad function - it really does two things: rewrites the
+// batch XML in the new batch and gathers the list of directories to skip for
+// the workers.  It's easier this way, but definitely not clean.
+func fixBatchXML(batchPath, newBatchPath string, keysToDelete []string) ([]string, error) {
+	var batchInfo, err = parseBatchXML(batchPath)
 	if err != nil {
-		return nil, err
-	}
-	var batchInfo = new(batchXML)
-	err = xml.Unmarshal(data, batchInfo)
-	if err != nil {
-		log.Fatalf("Unable to parse batch XML file %q: %s", batchPath, err)
 		return nil, err
 	}
 
+	var dirsToSkip []string
+	dirsToSkip, err = getSkipDirs(batchInfo, keysToDelete)
+	if err != nil {
+		return nil, err
+	}
+
+	return dirsToSkip, err
+}
+
+func getSkipDirs(batchInfo *batchXML, keysToDelete []string) ([]string, error) {
 	var keyToDir = make(map[string]string)
 	for _, issue := range batchInfo.Issues {
 		var key = keyfix(issue.LCCN + "/" + issue.IssueDate + issue.Edition)
@@ -140,13 +148,28 @@ func readBatchXML(batchPath string, keysToDelete []string) ([]string, error) {
 		key = keyfix(key)
 		var dir = keyToDir[key]
 		if dir == "" {
-			log.Fatalf("ERROR - Key %q was not found in the batch.xml file", key)
+			return nil, fmt.Errorf("key %q was not found in the batch.xml file", key)
 		}
 		log.Printf("INFO - Mapping input key %q to directory %q", key, dir)
 		dirs = append(dirs, dir)
 	}
 
 	return dirs, nil
+}
+
+func parseBatchXML(pth string) (*batchXML, error) {
+	var data, err = ioutil.ReadFile(pth)
+	if err != nil {
+		return nil, err
+	}
+	var batchInfo = new(batchXML)
+	err = xml.Unmarshal(data, batchInfo)
+	if err != nil {
+		log.Fatalf("Unable to parse batch XML file %q: %s", pth, err)
+		return nil, err
+	}
+
+	return batchInfo, nil
 }
 
 func keyfix(key string) string {
