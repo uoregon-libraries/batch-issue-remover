@@ -23,13 +23,16 @@ type issueXML struct {
 	IssueDate string `xml:"issueDate,attr"`
 	Edition   string `xml:"editionOrder,attr"`
 	Path      string `xml:",innerxml"`
+	Skip      bool   `xml:"-"`
 }
 type reelXML struct {
 	ReelNum string `xml:"reelNumber,attr"`
 	Path    string `xml:",innerxml"`
 }
 
-// ParseBatch reads the given XML file and processes it into batch data
+// ParseBatch reads the given XML file and processes it into batch data.  The
+// skipKeys are converted into directories that should be skipped from the
+// copy, and stored in the returned structure's SkipDirs field.
 func ParseBatch(pth string, skipKeys []string) (*batchXML, error) {
 	var data, err = ioutil.ReadFile(pth)
 	if err != nil {
@@ -44,23 +47,34 @@ func ParseBatch(pth string, skipKeys []string) (*batchXML, error) {
 		return nil, fmt.Errorf("parsed data has no issues")
 	}
 
-	var keyToDir = make(map[string]string)
+	var keyToDir = make(map[string]*issueXML)
 	for _, issue := range b.Issues {
 		var key = keyfix(issue.LCCN + "/" + issue.IssueDate + issue.Edition)
-		var dir, _ = filepath.Split(issue.Path)
-		keyToDir[key] = dir
+		keyToDir[key] = issue
 	}
 
 	for _, key := range skipKeys {
 		key = keyfix(key)
-		var dir = keyToDir[key]
-		if dir == "" {
+		var issue = keyToDir[key]
+		if issue == nil {
 			return nil, fmt.Errorf("issuekey %q not in batch", key)
 		}
 
+		var dir, _ = filepath.Split(issue.Path)
+		issue.Skip = true
 		b.SkipDirs = append(b.SkipDirs, dir)
 	}
 
+	var newIssues []*issueXML
+	for _, i := range b.Issues {
+		if i.Skip {
+			continue
+		}
+
+		newIssues = append(newIssues, i)
+	}
+
+	b.Issues = newIssues
 	return b, nil
 }
 
