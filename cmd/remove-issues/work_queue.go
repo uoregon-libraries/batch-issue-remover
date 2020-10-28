@@ -20,9 +20,9 @@ const (
 func (jt JobType) String() string {
 	switch jt {
 	case FileSkip:
-		return "Skip file"
+		return "skip file"
 	case FileCopy:
-		return "File copy"
+		return "file copy"
 	}
 	return "Unknown"
 }

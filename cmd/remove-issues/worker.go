@@ -18,6 +18,7 @@ type Worker struct {
 
 // Start listens for jobs until the work queue is closed
 func (w *Worker) Start() {
+	log.Printf("DEBUG: worker %d starting jobs", w.ID)
 	w.wg.Add(1)
 	for {
 		select {
@@ -32,6 +33,7 @@ func (w *Worker) Start() {
 				w.wg.Done()
 				return
 			}
+			log.Printf("DEBUG: worker %d has nothing to do; sleeping", w.ID)
 			time.Sleep(time.Second)
 		}
 	}
