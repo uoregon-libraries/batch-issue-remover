@@ -141,7 +141,7 @@ func getSkipDirs(batchInfo *batchXML, keysToDelete []string) ([]string, error) {
 		var dir, _ = filepath.Split(issue.Path)
 		keyToDir[key] = dir
 	}
-	log.Printf("INFO - batch.xml contains %d issues", len(keyToDir))
+	log.Printf("INFO: batch.xml contains %d issues", len(keyToDir))
 
 	var dirs []string
 	for _, key := range keysToDelete {
@@ -150,7 +150,7 @@ func getSkipDirs(batchInfo *batchXML, keysToDelete []string) ([]string, error) {
 		if dir == "" {
 			return nil, fmt.Errorf("key %q was not found in the batch.xml file", key)
 		}
-		log.Printf("INFO - Mapping input key %q to directory %q", key, dir)
+		log.Printf("INFO: Mapping input key %q to directory %q", key, dir)
 		dirs = append(dirs, dir)
 	}
 
