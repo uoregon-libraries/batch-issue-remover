@@ -32,7 +32,7 @@ func (w *Worker) Start() {
 				w.wg.Done()
 				return
 			}
-			time.Sleep(time.Millisecond * 50)
+			time.Sleep(time.Second)
 		}
 	}
 }
