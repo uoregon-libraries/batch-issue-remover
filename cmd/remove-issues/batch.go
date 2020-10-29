@@ -91,11 +91,43 @@ func (b *batchXML) WriteBatchXML(pth string) error {
 		return err
 	}
 
-	return ioutil.WriteFile(pth, data, 0644)
+	var output = append([]byte(xml.Header), data...)
+
+	return ioutil.WriteFile(pth, output, 0644)
 }
 
 func keyfix(key string) string {
 	key = strings.Replace(key, "-", "", -1)
 	key = strings.Replace(key, "_", "", -1)
 	return key
+}
+
+func makeattr(name, val string) xml.Attr {
+	return xml.Attr{Name: xml.Name{Local: name}, Value: val}
+}
+
+// MarshalXML sets up a wrapper element that defines the <ndnp:batch> tag very
+// precisely.
+//
+// This stupid hack seems to be necessary to get Go's XML encoding to output
+// the namespaces we want so the batch XML opening tag looks basically the same
+// as it did prior to the rewrite
+func (b *batchXML) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	var wrapper = struct {
+		Issues []*issueXML `xml:"issue"`
+		Reels  []*reelXML  `xml:"reel"`
+	}{
+		Issues: b.Issues,
+		Reels:  b.Reels,
+	}
+
+	start.Name.Local = "ndnp:batch"
+	start.Attr = append(start.Attr, makeattr("xmlns:ndnp", "http://www.loc.gov/ndnp"))
+	start.Attr = append(start.Attr, makeattr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance"))
+	start.Attr = append(start.Attr, makeattr("xmlns", "http://www.loc.gov/ndnp"))
+	start.Attr = append(start.Attr, makeattr("name", b.Name))
+	start.Attr = append(start.Attr, makeattr("awardee", b.Awardee))
+	start.Attr = append(start.Attr, makeattr("awardYear", b.AwardYear))
+
+	return e.EncodeElement(wrapper, start)
 }
