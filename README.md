@@ -1,4 +1,4 @@
-# Batch LCCN Fixer
+# Batch Issue Remover
 
 Removes incorrect or damaged issues in chronam / ONI batches:
 
