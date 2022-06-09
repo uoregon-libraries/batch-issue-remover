@@ -42,20 +42,25 @@ func getArgs() *FixContext {
 		usageError("Missing one or more arguments")
 	}
 
+	var src = os.Args[1]
+	var dst = os.Args[2]
 	var fc = &FixContext{
-		SourceDir: os.Args[1],
-		DestDir:   os.Args[2],
+		SourceDir: src,
+		DestDir:   dst,
 		IssueKeys: os.Args[3:],
 	}
 	var err error
 	fc.SourceDir, err = filepath.Abs(fc.SourceDir)
 	if err != nil {
-		usageError("Source (%s) is invalid: %s", fc.SourceDir, err)
+		usageError("Source (%s) is invalid: %s", src, err)
 	}
 	fc.DestDir, err = filepath.Abs(fc.DestDir)
 	if err != nil {
-		usageError("Source (%s) is invalid: %s", fc.DestDir, err)
+		usageError("Destination (%s) is invalid: %s", dst, err)
 	}
+
+	fmt.Printf("\033[1mInput dirs:\033[0m\n  - Source: %q\n  - Dest: %q\n", src, dst)
+	fmt.Printf("\033[32;1mCleaned dirs:\033[0m\n  - Source %q\n  - Dest: %q\n\n", fc.SourceDir, fc.DestDir)
 
 	var info os.FileInfo
 	info, err = os.Stat(fc.SourceDir)
